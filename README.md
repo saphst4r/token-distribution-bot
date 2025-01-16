@@ -1,52 +1,53 @@
 # HYB Distribution Tool
 
-This tool automates the distribution of HYB tokens to specified addresses.
+A tool for automating HYB token distribution to multiple addresses.
 
-## Prerequisites
+## Installation
 
-- Python 3.8 or higher
-- Git (for cloning the repository)
-
-## Setup
-
-1. Rename `.env.example` to `.env` and add your private key:
-
-```
-PRIVATE_KEY=your_private_key_here  # Include the 0x prefix
-```
-
-2. Install the required dependencies:
+1. Clone the repository:
 
 ```bash
-pip install -r requirements.txt
+git clone git@github.com:saphst4r/token-distribution-bot.git
+cd token-distribution-bot
 ```
 
-## Usage
-
-The tool provides two interfaces:
-
-1. Command Line Interface:
+2. Run the setup script:
 
 ```bash
-python tx_scheduler.py
+setup.bat
 ```
 
-2. Web Interface:
+3. Start the web interface:
 
 ```bash
-python webui.py
+run_webui.bat
 ```
 
-Then open http://localhost:5000 in your browser.
+## Optional Configuration
 
-## Features
+### Private Key Setup
 
-- Distribute HYB tokens to multiple addresses
-- Configure distribution amount, interval, and duration
-- Support for random recipient selection
-- Real-time status monitoring and logging
-- Optional "always include" address for each distribution round
+1. Rename `.env.example` to `.env`
+2. Add your private key to the file:
 
-## Note
+```
+PRIVATE_KEY=0x...
+```
 
-Make sure to keep your private key secure and never share it with anyone. The tool supports loading the private key from the `.env` file or entering it directly in the web interface.
+### Address List Setup
+
+Add recipient addresses to `address_list.json`. Example format:
+
+```json
+{
+  "addresses": [
+    "0x1234567890123456789012345678901234567890",
+    "0x2345678901234567890123456789012345678901",
+    "0x3456789012345678901234567890123456789012"
+  ]
+}
+```
+
+## Disclaimer
+
+⚠️ This tool has only been tested on testnet. Use at your own risk when using in mainnet.
