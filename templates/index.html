@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>HYB Distribution Interface</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .form-group {
+        margin-bottom: 20px;
+      }
+      .form-group label {
+        display: block;
+        margin-bottom: 5px;
+      }
+      .form-group input {
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        width: 100%;
+        box-sizing: border-box;
+      }
+      button {
+        background-color: #4caf50;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      button:disabled {
+        background-color: #cccccc;
+      }
+      #log {
+        margin-top: 20px;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        height: 200px;
+        overflow-y: auto;
+      }
+      .error {
+        color: red;
+      }
+      .advanced-options {
+        margin-top: 10px;
+        padding: 10px;
+        background-color: #f8f9fa;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+      }
+      .checkbox-label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+      }
+      .checkbox-label input[type="checkbox"] {
+        margin: 0;
+      }
+      #amountRange,
+      #intervalRange,
+      #recipientCount {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      #amountRange input,
+      #intervalRange input {
+        width: 120px;
+      }
+      .input-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 5px;
+      }
+      .options-toggle {
+        color: #007bff;
+        text-decoration: none;
+        font-size: 0.9em;
+      }
+      .options-toggle:hover {
+        text-decoration: underline;
+      }
+      .advanced-options {
+        display: none;
+        margin-top: 10px;
+        padding: 10px;
+        background-color: #f8f9fa;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+      }
+      .advanced-options.show {
+        display: block;
+      }
+      /* Toggle switch styles */
+      .switch {
+        position: relative;
+        display: inline-block;
+        width: 40px;
+        height: 20px;
+        margin-right: 10px;
+      }
+      .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+      .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: 0.4s;
+        border-radius: 20px;
+      }
+      .slider:before {
+        position: absolute;
+        content: "";
+        height: 16px;
+        width: 16px;
+        left: 2px;
+        bottom: 2px;
+        background-color: white;
+        transition: 0.4s;
+        border-radius: 50%;
+      }
+      input:checked + .slider {
+        background-color: #2196f3;
+      }
+      input:checked + .slider:before {
+        transform: translateX(20px);
+      }
+      .option-row {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+      .option-fields {
+        opacity: 0.5;
+        pointer-events: none;
+        transition: all 0.3s ease;
+      }
+      .option-fields.enabled {
+        opacity: 1;
+        pointer-events: auto;
+      }
+      .input-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 5px;
+      }
+      .options-toggle {
+        color: #007bff;
+        text-decoration: none;
+        font-size: 0.9em;
+      }
+      .options-toggle:hover {
+        text-decoration: underline;
+      }
+      .field-note {
+        font-size: 0.9em;
+        color: #666;
+        margin-top: 4px;
+      }
+      .input-with-toggle {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .input-with-toggle input {
+        flex: 1;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-family: monospace;
+      }
+      .toggle-key {
+        background: #6c757d;
+        color: white;
+        padding: 8px 12px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.9em;
+        min-width: 60px;
+      }
+      .toggle-key:hover {
+        background: #5a6268;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>HYB Distribution Interface</h1>
+
+    <div class="form-group">
+      <label for="privateKey">Private Key (optional):</label>
+      <div class="input-with-toggle">
+        <input
+          type="password"
+          id="privateKey"
+          placeholder="0x... (leave empty to use key from .env file)"
+          style="font-family: monospace"
+          autocomplete="off"
+        />
+        <button
+          type="button"
+          onclick="togglePrivateKey()"
+          class="toggle-key"
+          id="toggleKeyBtn"
+        >
+          Show
+        </button>
+      </div>
+      <div class="field-note">
+        If left empty, the private key from the .env file will be used
+      </div>
+    </div>
+
+    <div class="form-group">
+      <div class="input-header">
+        <label for="hybAmount">HYB Amount per Transfer:</label>
+        <a
+          href="#"
+          class="options-toggle"
+          onclick="toggleOptions('amountOptions')"
+          >options</a
+        >
+      </div>
+      <input type="number" id="hybAmount" value="0.001" step="0.001" />
+      <div class="advanced-options" id="amountOptions">
+        <div class="option-row">
+          <label class="switch">
+            <input
+              type="checkbox"
+              id="randomAmount"
+              onchange="toggleRandomAmount()"
+            />
+            <span class="slider"></span>
+          </label>
+          <span>Use random amount between:</span>
+        </div>
+        <div id="amountRange" class="option-fields">
+          <input
+            type="number"
+            id="minAmount"
+            value="0.001"
+            step="0.001"
+            placeholder="Min amount"
+          />
+          <span>to</span>
+          <input
+            type="number"
+            id="maxAmount"
+            value="0.002"
+            step="0.001"
+            placeholder="Max amount"
+          />
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <div class="input-header">
+        <label for="interval">Interval (minutes):</label>
+        <a
+          href="#"
+          class="options-toggle"
+          onclick="toggleOptions('intervalOptions')"
+          >options</a
+        >
+      </div>
+      <input type="number" id="interval" value="1" min="1" />
+      <div class="advanced-options" id="intervalOptions">
+        <div class="option-row">
+          <label class="switch">
+            <input
+              type="checkbox"
+              id="randomInterval"
+              onchange="toggleRandomInterval()"
+            />
+            <span class="slider"></span>
+          </label>
+          <span>Use random interval (minutes) between:</span>
+        </div>
+        <div id="intervalRange" class="option-fields">
+          <input
+            type="number"
+            id="minInterval"
+            value="1"
+            min="1"
+            placeholder="Min minutes"
+          />
+          <span>to</span>
+          <input
+            type="number"
+            id="maxInterval"
+            value="5"
+            min="1"
+            placeholder="Max minutes"
+          />
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <div class="input-header">
+        <label for="addresses">Recipient Addresses (optional):</label>
+        <a
+          href="#"
+          class="options-toggle"
+          onclick="toggleOptions('recipientOptions')"
+          >options</a
+        >
+      </div>
+      <textarea
+        id="addresses"
+        rows="4"
+        style="width: 100%"
+        placeholder="Enter addresses one per line (leave empty to use addresses from address_list.json)"
+      ></textarea>
+      <div class="field-note">
+        If left empty, addresses from address_list.json will be used
+      </div>
+      <div class="advanced-options" id="recipientOptions">
+        <div class="option-row">
+          <label class="switch">
+            <input
+              type="checkbox"
+              id="randomRecipients"
+              onchange="toggleRandomRecipients()"
+            />
+            <span class="slider"></span>
+          </label>
+          <span>Randomly select recipients each time</span>
+        </div>
+        <div id="recipientCount" class="option-fields">
+          <div style="margin-bottom: 10px">
+            <label>Number of recipients per distribution:</label>
+            <input type="number" id="numRecipients" value="1" min="1" />
+          </div>
+          <div>
+            <label>Always include this address:</label>
+            <input
+              type="text"
+              id="alwaysIncludeAddress"
+              placeholder="0x..."
+              style="width: 100%; font-family: monospace"
+              disabled
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button onclick="startDistribution()" id="startBtn">
+      Start Distribution
+    </button>
+    <button onclick="stopDistribution()" id="stopBtn" disabled>
+      Stop Distribution
+    </button>
+
+    <div id="log"></div>
+
+    <script>
+      var socket = io();
+      var running = false;
+
+      function updateButtons(isRunning) {
+        running = isRunning;
+        document.getElementById("startBtn").disabled = running;
+        document.getElementById("stopBtn").disabled = !running;
+        document.getElementById("privateKey").disabled = running;
+        document.getElementById("hybAmount").disabled =
+          running || document.getElementById("randomAmount").checked;
+        document.getElementById("interval").disabled =
+          running || document.getElementById("randomInterval").checked;
+        document.getElementById("addresses").disabled = running;
+      }
+
+      function toggleOptions(optionsId) {
+        event.preventDefault();
+        const options = document.getElementById(optionsId);
+        options.classList.toggle("show");
+      }
+
+      function toggleRandomAmount() {
+        const useRandom = document.getElementById("randomAmount").checked;
+        document.getElementById("hybAmount").disabled = useRandom;
+        document
+          .getElementById("amountRange")
+          .classList.toggle("enabled", useRandom);
+      }
+
+      function toggleRandomInterval() {
+        const useRandom = document.getElementById("randomInterval").checked;
+        document.getElementById("interval").disabled = useRandom;
+        document
+          .getElementById("intervalRange")
+          .classList.toggle("enabled", useRandom);
+      }
+
+      function toggleRandomRecipients() {
+        const useRandom = document.getElementById("randomRecipients").checked;
+        document
+          .getElementById("recipientCount")
+          .classList.toggle("enabled", useRandom);
+        document.getElementById("alwaysIncludeAddress").disabled = !useRandom;
+      }
+
+      function startDistribution() {
+        var privateKey = document.getElementById("privateKey").value.trim();
+        var addresses = document
+          .getElementById("addresses")
+          .value.split("\n")
+          .filter((addr) => addr.trim());
+
+        // Get amount settings
+        var hybAmount;
+        if (document.getElementById("randomAmount").checked) {
+          const minAmount = parseFloat(
+            document.getElementById("minAmount").value
+          );
+          const maxAmount = parseFloat(
+            document.getElementById("maxAmount").value
+          );
+          if (minAmount >= maxAmount) {
+            alert("Maximum amount must be greater than minimum amount");
+            return;
+          }
+          hybAmount = [minAmount, maxAmount];
+        } else {
+          hybAmount = parseFloat(document.getElementById("hybAmount").value);
+        }
+
+        // Get interval settings
+        var interval;
+        if (document.getElementById("randomInterval").checked) {
+          const minInterval = parseInt(
+            document.getElementById("minInterval").value
+          );
+          const maxInterval = parseInt(
+            document.getElementById("maxInterval").value
+          );
+          if (minInterval >= maxInterval) {
+            alert("Maximum interval must be greater than minimum interval");
+            return;
+          }
+          interval = [minInterval, maxInterval];
+        } else {
+          interval = parseInt(document.getElementById("interval").value);
+        }
+
+        // Get recipient settings
+        var recipientSettings = {
+          useRandom: document.getElementById("randomRecipients").checked,
+          count: parseInt(document.getElementById("numRecipients").value),
+          alwaysIncludeAddress: document
+            .getElementById("alwaysIncludeAddress")
+            .value.trim(),
+        };
+
+        if (privateKey && !privateKey.startsWith("0x")) {
+          alert("Private key must start with 0x");
+          return;
+        }
+
+        if (recipientSettings.useRandom && addresses.length > 0) {
+          if (recipientSettings.count > addresses.length) {
+            alert(
+              "Number of random recipients cannot exceed total number of addresses"
+            );
+            return;
+          }
+          if (
+            recipientSettings.alwaysIncludeAddress &&
+            !recipientSettings.alwaysIncludeAddress.startsWith("0x")
+          ) {
+            alert("Always include address must start with 0x");
+            return;
+          }
+        }
+
+        socket.emit(
+          "start_distribution",
+          {
+            private_key: privateKey, // Will be empty string if not provided
+            hyb_amount: hybAmount,
+            interval: interval,
+            addresses: addresses,
+            recipient_settings: recipientSettings,
+          },
+          function (response) {
+            if (response.status === "error") {
+              alert(response.message);
+              updateButtons(false); // Re-enable the buttons if there's an error
+              addLogMessage(response.message, "error");
+            } else {
+              updateButtons(true);
+            }
+          }
+        );
+      }
+
+      function stopDistribution() {
+        socket.emit("stop_distribution", function (response) {
+          if (response.status === "error") {
+            alert(response.message);
+            addLogMessage(response.message, "error");
+          }
+        });
+        updateButtons(false);
+      }
+
+      socket.on("log_message", function (data) {
+        addLogMessage(data.message, data.type);
+      });
+
+      socket.on("distribution_stopped", function () {
+        updateButtons(false);
+        addLogMessage("Distribution stopped", "info");
+      });
+
+      function addLogMessage(message, type) {
+        var log = document.getElementById("log");
+        var messageDiv = document.createElement("div");
+        messageDiv.textContent = message;
+        if (type === "error") {
+          messageDiv.className = "error";
+        }
+        log.appendChild(messageDiv);
+        log.scrollTop = log.scrollHeight;
+      }
+
+      function togglePrivateKey() {
+        const input = document.getElementById("privateKey");
+        const button = document.getElementById("toggleKeyBtn");
+        if (input.type === "password") {
+          input.type = "text";
+          button.textContent = "Hide";
+        } else {
+          input.type = "password";
+          button.textContent = "Show";
+        }
+      }
+    </script>
+  </body>
+</html>
